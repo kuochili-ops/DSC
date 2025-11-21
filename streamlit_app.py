@@ -57,7 +57,11 @@ def parse_current_list(html):
     header = soup.find(lambda tag: tag.name in ["h2", "h3"] and "Current Drug Safety Communications" in tag.text)
     items = []
     if header:
-        for a in header.find_next().find_all("a", href=True):
+        ul = header.find_next("ul")
+        for li in ul.find_all("li"):
+            a = li.find("a", href=True)
+            if not a:
+                continue
             txt = a.get_text(strip=True)
             m = re.match(r"(.{0,30}\d{4})\s+(.*)", txt)
             if m:
@@ -67,14 +71,10 @@ def parse_current_list(html):
                 date = ""
                 title = txt
             href = a["href"]
-            # 拼接完整 URL
             if href.startswith("/"):
                 href = "https://www.fda.gov" + href
             items.append({"date": date, "title": title, "href": href})
     return items
-
-
-
 
 def extract_fields(title):
     t = title.lower()
