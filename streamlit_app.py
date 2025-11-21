@@ -59,7 +59,6 @@ def parse_current_list(html):
     if header:
         for a in header.find_next().find_all("a", href=True):
             txt = a.get_text(strip=True)
-            # 放寬日期解析，只要有年份就抓
             m = re.match(r"(.{0,30}\d{4})\s+(.*)", txt)
             if m:
                 date = m.group(1).replace("/", "-")
@@ -67,12 +66,13 @@ def parse_current_list(html):
             else:
                 date = ""
                 title = txt
-            # 拼接完整 URL
             href = a["href"]
+            # 拼接完整 URL
             if href.startswith("/"):
                 href = "https://www.fda.gov" + href
             items.append({"date": date, "title": title, "href": href})
     return items
+
 
 
 
