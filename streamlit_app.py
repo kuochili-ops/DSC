@@ -35,6 +35,7 @@ def build_fda_df_from_json(results):
         })
     return pd.DataFrame(rows)
 
+
 import re
 import os
 from bs4 import BeautifulSoup
