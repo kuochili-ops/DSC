@@ -168,12 +168,12 @@ st.subheader("FDA Current Drug Safety Communications")
 # 建立可點擊的連結欄位
 fda_df_display = fda_df.copy()
 fda_df_display["原始通報"] = fda_df_display.apply(
-    lambda r: f"[連結]({r['source_url']})", axis=1
+    lambda r: f'<a href="{r["source_url"]}" target="_blank">連結</a>', axis=1
 )
 
-# 用 markdown 顯示表格，讓連結可點擊
-st.markdown(
-    fda_df_display[["日期","品名","主成分","原始通報"]].to_markdown(index=False),
+# 用 HTML 顯示表格，讓連結可點擊
+st.write(
+    fda_df_display[["日期","品名","主成分","原始通報"]].to_html(escape=False, index=False),
     unsafe_allow_html=True
 )
 
