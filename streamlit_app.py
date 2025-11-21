@@ -31,10 +31,12 @@ SYNONYMS = {
 
 def normalize_ingredient_token(tok):
     tok = clean_text(tok)
-    for salt in ["hbr", "bromide", "acetate", "tartrate", "hcl", "maleate", "methylsulfate"]:
+    for salt in ["hbr", "bromide", "acetate", "tartrate", "hcl", "maleate", "methylsulfate",
+                 "hydrobromide", "dihydrochloride", "hydrochloride"]:
         tok = tok.replace(salt, "")
     tok = re.sub(r"[^\w\s]", "", tok).strip()
     return SYNONYMS.get(tok, tok)
+
 
 def split_ingredients(s):
     parts = re.split(r";|,|/| and |\+|\|", str(s))
