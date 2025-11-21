@@ -59,14 +59,18 @@ def parse_current_list(html):
     if header:
         for a in header.find_next().find_all("a", href=True):
             txt = a.get_text(strip=True)
-            # 支援 MM-DD-YYYY 與 Month DD, YYYY 格式
-            m = re.match(r"(\d{1,2}[-/]\d{1,2}[-/]\d{4}|\w+\s+\d{1,2},\s+\d{4})\s+(.*)", txt)
+            # 放寬日期解析，只要有年份就抓
+            m = re.match(r"(.{0,30}\d{4})\s+(.*)", txt)
             if m:
                 date = m.group(1).replace("/", "-")
                 title = m.group(2)
                 href = a["href"]
                 items.append({"date": date, "title": title, "href": href})
+            else:
+                # 如果沒有符合正則，仍然保留標題
+                items.append({"date": "", "title": txt, "href": a["href"]})
     return items
+
 
 def extract_fields(title):
     t = title.lower()
