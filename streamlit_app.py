@@ -220,3 +220,24 @@ if not fda_df.empty and not tw_df.empty:
         st.dataframe(special_tw[
             ["tw_id","tw_c_brand","tw_e_brand","tw_form","tw_ingredient","tw_company"]
         ], use_container_width=True)
+
+# 比對邏輯呈現
+if not fda_df.empty and not tw_df.empty:
+    # 可能相關台灣品項（主成分交集）
+    relevant_tokens = set()
+    for ing in fda_df["主成分"].dropna():
+        relevant_tokens.update(split_ingredients(ing))
+    cand_tw = tw_df[tw_df["tw_ing_list"].apply(lambda lst: bool(set(lst) & relevant_tokens))]
+
+    st.subheader(f"🔍 可能相關台灣品項（{len(cand_tw)} 筆）")
+    st.dataframe(cand_tw[
+        ["tw_id","tw_c_brand","tw_e_brand","tw_form","tw_ingredient","tw_company"]
+    ], use_container_width=True)
+
+    # 特別挑出藥商為「中國化學」或「中化裕民」
+    special_tw = cand_tw[cand_tw["tw_company"].str.contains("中國化學|中化裕民", na=False)]
+    if not special_tw.empty:
+        st.subheader(f"⭐ 特別關注藥商（中國化學 / 中化裕民）相關品項（{len(special_tw)} 筆）")
+        st.dataframe(special_tw[
+            ["tw_id","tw_c_brand","tw_e_brand","tw_form","tw_ingredient","tw_company"]
+        ], use_container_width=True)
