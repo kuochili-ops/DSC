@@ -2,6 +2,16 @@ import streamlit as st
 import pandas as pd
 import requests
 
+def fetch_fda_json():
+    """
+    從 openFDA API 抓取最新有警示的藥品標示資料
+    """
+    url = "https://api.fda.gov/drug/label.json?search=warnings&limit=10"
+    r = requests.get(url, timeout=30)
+    r.raise_for_status()
+    data = r.json()
+    return data["results"]
+
 def build_fda_df_from_json(results):
     """
     將 openFDA JSON 轉換成 DataFrame
@@ -24,6 +34,7 @@ def build_fda_df_from_json(results):
             "source_url": "https://api.fda.gov/drug/label.json"
         })
     return pd.DataFrame(rows)
+
 
 import re
 import os
