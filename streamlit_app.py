@@ -1,3 +1,6 @@
+### 📦 完整 `streamlit_app.py`
+
+```python
 import streamlit as st
 import pandas as pd
 import requests
@@ -95,6 +98,14 @@ def build_fda_df(items):
         })
     return pd.DataFrame(rows)
 
+def fallback_seed():
+    return pd.DataFrame([
+        {"日期":"2025-08-28","品名":"Leqembi","主成分":"lecanemab","安全議題":"建議更早 MRI 監測","用藥族群":"阿茲海默症患者","注意事項與對策":"調整 MRI 頻率","source_title":"Leqembi (lecanemab)","source_url":FDA_URL},
+        {"日期":"2025-08-27","品名":"Clozapine","主成分":"clozapine","安全議題":"移除 REMS 計畫","用藥族群":"精神分裂症患者","注意事項與對策":"依新標示調整監測","source_title":"Clozapine","source_url":FDA_URL},
+        {"日期":"2025-08-11","品名":"Copaxone","主成分":"glatiramer acetate","安全議題":"過敏性休克警示","用藥族群":"多發性硬化症患者","注意事項與對策":"出現過敏徵兆立即停藥","source_title":"Copaxone (glatiramer acetate)","source_url":FDA_URL},
+        {"日期":"2025-08-18","品名":"Transderm Scōp","主成分":"scopolamine","安全議題":"高溫併發症風險","用藥族群":"使用抗暈貼片者","注意事項與對策":"高溫環境慎用","source_title":"Transderm Scōp (scopolamine)","source_url":FDA_URL},
+    ])
+
 # ---------- 台灣 CSV 載入 ----------
 
 @st.cache_data
@@ -139,17 +150,18 @@ try:
     html = fetch_html(FDA_URL)
     items = parse_current_list(html)
     fda_df = build_fda_df(items)
-    st.success(f"已解析 FDA 通報 {len(fda_df)} 筆")
+    if fda_df.empty:
+        st.warning("⚠️ FDA 網頁解析失敗，已載入 2025 種子資料。")
+        fda_df = fallback_seed()
+    else:
+        st.success(f"已解析 FDA 通報 {len(fda_df)} 筆")
 except Exception as e:
     st.error(f"FDA 網頁抓取失敗：{e}")
-    fda_df = pd.DataFrame(columns=["日期","品名","主成分","source_title"])
+    fda_df = fallback_seed()
 
 st.subheader("FDA Current Drug Safety Communications")
-if not fda_df.empty:
-    cols = [c for c in ["日期","品名","主成分","source_title"] if c in fda_df.columns]
-    st.dataframe(fda_df[cols], use_container_width=True)
-else:
-    st.warning("⚠️ 尚未抓到 FDA 通報資料")
+cols = [c for c in ["日期","品名","主成分","source_title"] if c in fda_df.columns]
+st.dataframe(fda_df[cols], use_container_width=True)
 
 st.info("正在載入台灣品項資料…")
 try:
