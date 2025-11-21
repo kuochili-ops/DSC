@@ -95,9 +95,13 @@ def ingredient_match(fda_core: list, tw_core: list) -> bool:
 # ---------- FDA scraping ----------
 
 def fetch_html(url: str) -> str:
-    r = requests.get(url, timeout=30)
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    }
+    r = requests.get(url, headers=headers, timeout=30)
     r.raise_for_status()
     return r.text
+
 
 def parse_current_list(html: str) -> list:
     """
