@@ -84,7 +84,7 @@ def extract_fields(title):
     # 如果沒有括號，或括號內不是藥名 → 從全文比對已知藥名
     if not ing_list:
         for drug in KNOWN_INGREDIENTS:
-            if drug in t:
+            if re.search(rf"\b{drug}\b", t):
                 ing_list.append(drug)
 
     # 品名：括號前片段，或全文裡第一個藥名
@@ -93,7 +93,7 @@ def extract_fields(title):
     else:
         product = ""
         for drug in KNOWN_INGREDIENTS:
-            if drug in t:
+            if re.search(rf"\b{drug}\b", t):
                 # 保留原始大小寫樣式
                 m = re.search(rf"\b({drug})\b", title, re.IGNORECASE)
                 if m:
