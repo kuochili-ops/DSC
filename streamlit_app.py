@@ -78,22 +78,26 @@ def extract_fields(title):
         ing_list = split_ingredients(ing_raw)
         ing_list = [tok for tok in ing_list if tok not in EXCLUDE_TOKENS]
     else:
-        tokens = re.findall(r"[a-zA-Z][a-zA-Z\-]+", t)
-        norm_tokens = [normalize_ingredient_token(x) for x in tokens]
-        ing_list = sorted({tok for tok in norm_tokens if tok in KNOWN_INGREDIENTS and tok not in EXCLUDE_TOKENS})
+        # 沒括號時，直接比對已知藥名
+        ing_list = []
+        for drug in KNOWN_INGREDIENTS:
+            if drug in t:
+                ing_list.append(drug)
+
+    # 品名：括號前片段，或全文裡第一個藥名
     if paren:
         product = title.split("(")[0].strip()
     else:
         product = ""
-        for k in KNOWN_INGREDIENTS:
-            if re.search(rf"\b{k}\b", t):
-                m = re.search(rf"\b({k})\b", t)
-                if m:
-                    product = m.group(1)
-                    break
+        for drug in KNOWN_INGREDIENTS:
+            if drug in t:
+                product = drug.capitalize()
+                break
         if not product:
             product = title.split(":")[0].split("–")[0].split("-")[0].strip()
+
     return {"product": product, "ingredient_list": ing_list}
+
 
 def build_fda_df(items):
     if not items:
