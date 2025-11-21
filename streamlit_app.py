@@ -164,8 +164,19 @@ except Exception as e:
     fda_df = fallback_seed()
 
 st.subheader("FDA Current Drug Safety Communications")
-cols = [c for c in ["日期","品名","主成分","source_title"] if c in fda_df.columns]
-st.dataframe(fda_df[cols], use_container_width=True)
+
+# 建立可點擊的連結欄位
+fda_df_display = fda_df.copy()
+fda_df_display["原始通報"] = fda_df_display.apply(
+    lambda r: f"[連結]({r['source_url']})", axis=1
+)
+
+# 用 markdown 顯示表格，讓連結可點擊
+st.markdown(
+    fda_df_display[["日期","品名","主成分","原始通報"]].to_markdown(index=False),
+    unsafe_allow_html=True
+)
+
 
 st.info("正在載入台灣品項資料…")
 try:
