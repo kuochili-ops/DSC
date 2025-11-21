@@ -150,3 +150,63 @@ def match_tw_products(fda_df, tw_df):
                 "比對方式": "品牌命中"
             })
     return pd.DataFrame(matches)
+
+# ---------- Streamlit UI ----------
+
+st.set_page_config(page_title="FDA 通報解析與台灣品項比對", layout="wide")
+st.title("💊 FDA 藥品安全通報解析與台灣品項比對")
+
+# 抓取 FDA 通報
+st.info("正在抓取 FDA 通報資料…")
+try:
+    html = fetch_html(FDA_URL)
+    items = parse_current_list(html)
+    fda_df = build_fda_df(items)
+    if fda_df.empty:
+        st.warning("⚠️ FDA HTML 解析失敗，已載入種子資料。")
+        fda_df = fallback_seed()
+    else:
+        st.success(f"已解析 FDA 通報 {len(fda_df)} 筆")
+except Exception as e:
+    st.error(f"FDA 網頁抓取失敗：{e}")
+    fda_df = fallback_seed()
+
+# 顯示 FDA 通報表格
+st.subheader("FDA Current Drug Safety Communications")
+fda_df_display = fda_df.copy()
+fda_df_display["原始通報"] = fda_df_display.apply(
+    lambda r: f'<a href="{r["source_url"]}" target="_blank">連結</a>', axis=1
+)
+st.write(
+    fda_df_display[["日期","品名","主成分","原始通報"]].to_html(escape=False, index=False),
+    unsafe_allow_html=True
+)
+
+# 載入台灣品項
+st.info("正在載入台灣品項資料…")
+try:
+    tw_df = load_tw_data()
+    st.success(f"已載入台灣品項 {len(tw_df)} 筆")
+except Exception as e:
+    st.error(f"CSV 載入失敗：{e}")
+    tw_df = pd.DataFrame()
+
+# 比對邏輯呈現
+if not fda_df.empty and not tw_df.empty:
+    # 可能相關台灣品項（主成分交集）
+    relevant_tokens = set()
+    for ing in fda_df["主成分"].dropna():
+        relevant_tokens.update(split_ingredients(ing))
+    cand_tw = tw_df[tw_df["tw_ing_list"].apply(lambda lst: bool(set(lst) & relevant_tokens))]
+    st.subheader(f"🔍 可能相關台灣品項（{len(cand_tw)} 筆）")
+    st.dataframe(cand_tw[
+        ["tw_id","tw_c_brand","tw_e_brand","tw_form","tw_ingredient","tw_company"]
+    ], use_container_width=True)
+
+    # 特別挑出藥商為「中國化學」或「中化裕民」
+    special_tw = cand_tw[cand_tw["tw_company"].str.contains("中國化學|中化裕民", na=False)]
+    if not special_tw.empty:
+        st.subheader(f"⭐ 特別關注藥商（中國化學 / 中化裕民）相關品項（{len(special_tw)} 筆）")
+        st.dataframe(special_tw[
+            ["tw_id","tw_c_brand","tw_e_brand","tw_form","tw_ingredient","tw_company"]
+        ], use_container_width=True)
