@@ -8,7 +8,6 @@ from bs4 import BeautifulSoup
 FDA_URL = "https://www.fda.gov/drugs/drug-safety-and-availability/drug-safety-communications"
 
 # ---------- 資料清理與正規化 ----------
-
 def clean_text(s):
     return re.sub(r"\s+", " ", str(s)).strip().lower()
 
@@ -41,11 +40,7 @@ def split_ingredients(s):
     parts = re.split(r";|,|/| and |\+|\|", str(s))
     return list({normalize_ingredient_token(p) for p in parts if p.strip()})
 
-def ingredient_match(fda_list, tw_list):
-    return bool(set(fda_list) & set(tw_list))
-
 # ---------- FDA 抓取與解析 ----------
-
 def fetch_html(url):
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
     r = requests.get(url, headers=headers, timeout=30)
@@ -62,28 +57,43 @@ def parse_current_list(html):
             a = li.find("a", href=True)
             if not a:
                 continue
-            txt = a.get_text(strip=True)
-            m = re.match(r"(.{0,30}\d{4})\s+(.*)", txt)
-            if m:
-                date = m.group(1).replace("/", "-")
-                title = m.group(2)
-            else:
-                date = ""
-                title = txt
+            li_text = li.get_text(" ", strip=True)
+            m_date = re.match(r"^\s*(\d{2}-\d{2}-\d{4})\b", li_text)
+            date = m_date.group(1) if m_date else ""
+            title = a.get("title") or a.get_text(strip=True)
             href = a["href"]
             if href.startswith("/"):
                 href = "https://www.fda.gov" + href
             items.append({"date": date, "title": title, "href": href})
     return items
 
+EXCLUDE_TOKENS = {"rems", "program", "strategy", "risk", "evaluation", "mitigation", "warning", "labeling"}
+KNOWN_INGREDIENTS = set(SYNONYMS.keys())
+
 def extract_fields(title):
     t = title.lower()
-    ingr = re.findall(r"\(([^)]+)\)", t)
-    product = re.split(r"\(|-", title)[0].strip()
-    return {
-        "product": product,
-        "ingredient_raw": ingr[0] if ingr else ""
-    }
+    paren = re.findall(r"\(([^)]+)\)", t)
+    if paren:
+        ing_raw = paren[-1]
+        ing_list = split_ingredients(ing_raw)
+        ing_list = [tok for tok in ing_list if tok not in EXCLUDE_TOKENS]
+    else:
+        tokens = re.findall(r"[a-zA-Z][a-zA-Z\-]+", t)
+        norm_tokens = [normalize_ingredient_token(x) for x in tokens]
+        ing_list = sorted({tok for tok in norm_tokens if tok in KNOWN_INGREDIENTS and tok not in EXCLUDE_TOKENS})
+    if paren:
+        product = title.split("(")[0].strip()
+    else:
+        product = ""
+        for k in KNOWN_INGREDIENTS:
+            if re.search(rf"\b{k}\b", t):
+                m = re.search(rf"\b({k})\b", t)
+                if m:
+                    product = m.group(1)
+                    break
+        if not product:
+            product = title.split(":")[0].split("–")[0].split("-")[0].strip()
+    return {"product": product, "ingredient_list": ing_list}
 
 def build_fda_df(items):
     if not items:
@@ -91,11 +101,10 @@ def build_fda_df(items):
     rows = []
     for it in items:
         fields = extract_fields(it["title"])
-        ingr_list = split_ingredients(fields["ingredient_raw"])
         rows.append({
             "日期": it["date"],
             "品名": fields["product"],
-            "主成分": ", ".join(ingr_list),
+            "主成分": ", ".join(fields["ingredient_list"]),
             "安全議題": "",
             "用藥族群": "",
             "注意事項與對策": "",
@@ -106,13 +115,11 @@ def build_fda_df(items):
 
 def fallback_seed():
     return pd.DataFrame([
-        {"日期":"2025-08-28","品名":"Leqembi","主成分":"lecanemab","安全議題":"建議更早 MRI 監測","用藥族群":"阿茲海默症患者","注意事項與對策":"調整 MRI 頻率","source_title":"Leqembi (lecanemab)","source_url":FDA_URL},
-        {"日期":"2025-08-27","品名":"Clozapine","主成分":"clozapine","安全議題":"移除 REMS 計畫","用藥族群":"精神分裂症患者","注意事項與對策":"依新標示調整監測","source_title":"Clozapine","source_url":FDA_URL},
-        {"日期":"2025-01-22","品名":"Copaxone","主成分":"glatiramer acetate","安全議題":"過敏性休克警示","用藥族群":"多發性硬化症患者","注意事項與對策":"出現過敏徵兆立即停藥","source_title":"Copaxone (glatiramer acetate)","source_url":FDA_URL},
-        {"日期":"2025-06-18","品名":"Transderm Scōp","主成分":"scopolamine","安全議題":"高溫併發症風險","用藥族群":"使用抗暈貼片者","注意事項與對策":"高溫環境慎用","source_title":"Transderm Scōp (scopolamine)","source_url":FDA_URL},
+        {"日期":"2025-08-28","品名":"Leqembi","主成分":"lecanemab","安全議題":"建議更早 MRI 監測","用藥族群":"阿茲海默症患者","注意事項與對策":"調整 MRI 頻率","source_title":"Leqembi (lecanemab)","source_url":"https://www.fda.gov/drugs/drug-safety-and-availability/fda-recommend-additional-earlier-mri-monitoring-patients-alzheimers-disease-taking-leqembi-lecanemab"},
+        {"日期":"2025-08-27","品名":"Clozapine","主成分":"clozapine","安全議題":"移除 REMS 計畫","用藥族群":"精神分裂症患者","注意事項與對策":"依新標示調整監測","source_title":"Clozapine","source_url":"https://www.fda.gov/drugs/drug-safety-and-availability/fda-removes-risk-evaluation-and-mitigation-strategy-rems-program-antipsychotic-drug-clozapine"},
+        {"日期":"2025-01-22","品名":"Copaxone","主成分":"glatiramer acetate","安全議題":"過敏性休克警示","用藥族群":"多發性硬化症患者","注意事項與對策":"出現過敏徵兆立即停藥","source_title":"Copaxone (glatiramer acetate)","source_url":"https://www.fda.gov/drugs/drug-safety-and-availability/fda-adds-boxed-warning-about-rare-serious-allergic-reaction-called-anaphylaxis-multiple-sclerosis"},
+        {"日期":"2025-06-18","品名":"Transderm Scōp","主成分":"scopolamine","安全議題":"高溫併發症風險","用藥族群":"使用抗暈貼片者","注意事項與對策":"高溫環境慎用","source_title":"Transderm Scōp (scopolamine)","source_url":"https://www.fda.gov/drugs/drug-safety-and-availability/fda-adds-warning-about-serious-risk-heat-related-complications-antinausea-patch-transderm-scop"},
     ])
-
-# ---------- 台灣 CSV 載入 ----------
 
 @st.cache_data
 def load_tw_data():
@@ -121,8 +128,6 @@ def load_tw_data():
     df["tw_e_brand_norm"] = df["tw_e_brand"].apply(normalize_brand)
     df["tw_ing_list"] = df["tw_ingredient"].apply(split_ingredients)
     return df
-
-# ---------- 比對邏輯 ----------
 
 def match_tw_products(fda_df, tw_df):
     matches = []
@@ -145,64 +150,3 @@ def match_tw_products(fda_df, tw_df):
                 "比對方式": "品牌命中"
             })
     return pd.DataFrame(matches)
-
-
-
-# ---------- Streamlit UI ----------
-
-st.set_page_config(page_title="FDA 通報解析與台灣品項比對", layout="wide")
-st.title("💊 FDA 藥品安全通報解析與台灣品項比對")
-
-st.info("正在抓取 FDA 通報資料…")
-try:
-    html = fetch_html(FDA_URL)
-    items = parse_current_list(html)
-    fda_df = build_fda_df(items)
-    if fda_df.empty:
-        st.warning("⚠️ FDA HTML 解析失敗，已載入 2025 種子資料。")
-        fda_df = fallback_seed()
-    else:
-        st.success(f"已解析 FDA 通報 {len(fda_df)} 筆")
-except Exception as e:
-    st.error(f"FDA 網頁抓取失敗：{e}")
-    fda_df = fallback_seed()
-
-st.subheader("FDA Current Drug Safety Communications")
-
-fda_df_display = fda_df.copy()
-fda_df_display["原始通報"] = fda_df_display.apply(
-    lambda r: f'<a href="{r["source_url"]}" target="_blank">連結</a>', axis=1
-)
-
-st.write(
-    fda_df_display[["日期","品名","主成分","原始通報"]].to_html(escape=False, index=False),
-    unsafe_allow_html=True
-)
-
-st.info("正在載入台灣品項資料…")
-try:
-    tw_df = load_tw_data()
-    st.success(f"已載入台灣品項 {len(tw_df)} 筆")
-except Exception as e:
-    st.error(f"CSV 載入失敗：{e}")
-    tw_df = pd.DataFrame()
-
-if not fda_df.empty and not tw_df.empty:
-    # 只顯示可能相關台灣品項（主成分交集）
-    relevant_tokens = set()
-    for ing in fda_df["主成分"].dropna():
-        relevant_tokens.update(split_ingredients(ing))
-    cand_tw = tw_df[tw_df["tw_ing_list"].apply(lambda lst: bool(set(lst) & relevant_tokens))]
-    st.subheader(f"🔍 可能相關台灣品項（{len(cand_tw)} 筆）")
-    st.dataframe(cand_tw[
-        ["tw_id","tw_c_brand","tw_e_brand","tw_form","tw_ingredient","tw_company"]
-    ], use_container_width=True)
-
-# 特別挑出藥商為「中國化學」或「中化裕民」的項目
-special_tw = cand_tw[cand_tw["tw_company"].str.contains("中國化學|中化裕民", na=False)]
-
-if not special_tw.empty:
-    st.subheader(f"⭐ 特別關注藥商（中國化學 / 中化裕民）相關品項（{len(special_tw)} 筆）")
-    st.dataframe(special_tw[
-        ["tw_id","tw_c_brand","tw_e_brand","tw_form","tw_ingredient","tw_company"]
-    ], use_container_width=True)
