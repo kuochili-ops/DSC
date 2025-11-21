@@ -76,25 +76,21 @@ def extract_fields(title):
     ing_list = []
 
     if paren:
-        # 如果有括號，先抓括號內的成分
         ing_raw = paren[-1]
         ing_list = split_ingredients(ing_raw)
-        ing_list = [tok for tok in ing_list if tok not in EXCLUDE_TOKENS]
+        ing_list = [normalize_ingredient_token(tok) for tok in ing_list if tok not in EXCLUDE_TOKENS]
 
-    # 如果沒有括號，或括號內不是藥名 → 從全文比對已知藥名
     if not ing_list:
         for drug in KNOWN_INGREDIENTS:
             if re.search(rf"\b{drug}\b", t):
                 ing_list.append(drug)
 
-    # 品名：括號前片段，或全文裡第一個藥名
     if paren:
         product = title.split("(")[0].strip()
     else:
         product = ""
         for drug in KNOWN_INGREDIENTS:
             if re.search(rf"\b{drug}\b", t):
-                # 保留原始大小寫樣式
                 m = re.search(rf"\b({drug})\b", title, re.IGNORECASE)
                 if m:
                     product = m.group(1)
@@ -103,6 +99,7 @@ def extract_fields(title):
             product = title.split(":")[0].split("–")[0].split("-")[0].strip()
 
     return {"product": product, "ingredient_list": ing_list}
+
 
 
 def build_fda_df(items):
@@ -137,6 +134,7 @@ def load_tw_data():
     df = pd.read_csv(path)
     df["tw_e_brand_norm"] = df["tw_e_brand"].apply(normalize_brand)
     df["tw_ing_list"] = df["tw_ingredient"].apply(split_ingredients)
+
     return df
 
 def match_tw_products(fda_df, tw_df):
