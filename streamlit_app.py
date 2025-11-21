@@ -77,6 +77,8 @@ def extract_fields(title):
     }
 
 def build_fda_df(items):
+    if not items:
+        return pd.DataFrame(columns=["日期","品名","主成分","安全議題","用藥族群","注意事項與對策","source_title","source_url"])
     rows = []
     for it in items:
         fields = extract_fields(it["title"])
@@ -118,12 +120,12 @@ def match_tw_products(fda_df, tw_df):
                 "日期": row["日期"],
                 "FDA_品名": row["品名"],
                 "FDA_主成分": row["主成分"],
-                "tw_id": tw["tw_id"],
-                "tw_c_brand": tw["tw_c_brand"],
-                "tw_e_brand": tw["tw_e_brand"],
-                "tw_form": tw["tw_form"],
-                "tw_ingredient": tw["tw_ingredient"],
-                "tw_company": tw["tw_company"]
+                "藥證號碼": tw["tw_id"],
+                "中文品名": tw["tw_c_brand"],
+                "英文品名": tw["tw_e_brand"],
+                "劑型": tw["tw_form"],
+                "主成分": tw["tw_ingredient"],
+                "藥商": tw["tw_company"],
             })
     return pd.DataFrame(matches)
 
@@ -140,9 +142,14 @@ try:
     st.success(f"已解析 FDA 通報 {len(fda_df)} 筆")
 except Exception as e:
     st.error(f"FDA 網頁抓取失敗：{e}")
-    fda_df = pd.DataFrame()
+    fda_df = pd.DataFrame(columns=["日期","品名","主成分","source_title"])
 
-st.dataframe(fda_df[["日期", "品名", "主成分", "source_title"]], use_container_width=True)
+st.subheader("FDA Current Drug Safety Communications")
+if not fda_df.empty:
+    cols = [c for c in ["日期","品名","主成分","source_title"] if c in fda_df.columns]
+    st.dataframe(fda_df[cols], use_container_width=True)
+else:
+    st.warning("⚠️ 尚未抓到 FDA 通報資料")
 
 st.info("正在載入台灣品項資料…")
 try:
@@ -155,16 +162,20 @@ except Exception as e:
 if not fda_df.empty and not tw_df.empty:
     match_df = match_tw_products(fda_df, tw_df)
     st.subheader(f"✅ 成功比對結果（{len(match_df)} 筆）")
-    st.dataframe(match_df, use_container_width=True)
+    st.dataframe(match_df[
+        ["日期","FDA_品名","FDA_主成分","藥證號碼","中文品名","英文品名","劑型","主成分","藥商"]
+    ], use_container_width=True)
 
     matched_keys = set(zip(match_df["日期"], match_df["FDA_品名"], match_df["FDA_主成分"]))
     unmatched = fda_df[~fda_df.apply(lambda r: (r["日期"], r["品名"], r["主成分"]) in matched_keys, axis=1)]
     st.subheader(f"⚠️ 未匹配 FDA 通報（{len(unmatched)} 筆）")
-    st.dataframe(unmatched[["日期", "品名", "主成分", "source_title"]], use_container_width=True)
+    st.dataframe(unmatched[["日期","品名","主成分","source_title"]], use_container_width=True)
 
     relevant_tokens = set()
     for ing in fda_df["主成分"].dropna():
         relevant_tokens.update(split_ingredients(ing))
     cand_tw = tw_df[tw_df["tw_ing_list"].apply(lambda lst: bool(set(lst) & relevant_tokens))]
     st.subheader(f"🔍 可能相關台灣品項（{len(cand_tw)} 筆）")
-    st.dataframe(cand_tw[["tw_id", "tw_c_brand", "tw_e_brand", "tw_form", "tw_ingredient", "tw_company"]], use_container_width=True)
+    st.dataframe(cand_tw[
+        ["tw_id","tw_c_brand","tw_e_brand","tw_form","tw_ingredient","tw_company"]
+    ], use_container_width=True)
