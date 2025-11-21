@@ -144,9 +144,12 @@ st.title("💊 FDA 藥品安全通報解析與台灣品項比對")
 
 st.info("正在抓取 FDA 通報資料…")
 try:
-    html = fetch_html(FDA_URL)
-    items = parse_current_list(html)
-    fda_df = build_fda_df(items)
+    results = fetch_fda_json()
+    fda_df = build_fda_df_from_json(results)
+    st.success(f"已解析 FDA JSON API 通報 {len(fda_df)} 筆")
+except Exception as e:
+    st.error(f"FDA JSON API 抓取失敗：{e}")
+    fda_df = fallback_seed()
     if fda_df.empty:
         st.warning("⚠️ FDA 網頁解析失敗，已載入 2025 種子資料。")
         fda_df = fallback_seed()
