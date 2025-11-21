@@ -143,8 +143,9 @@ def match_tw_products(fda_df, tw_df):
     matches = []
     for _, row in fda_df.iterrows():
         fda_brand = normalize_brand(row["品名"])
+        fda_ing_list = split_ingredients(row["主成分"])
 
-        # 只做品牌比對
+        # 品牌比對
         brand_hits = tw_df[tw_df["tw_e_brand_norm"] == fda_brand]
         for _, tw in brand_hits.iterrows():
             matches.append({
@@ -159,7 +160,24 @@ def match_tw_products(fda_df, tw_df):
                 "藥商": tw["tw_company"],
                 "比對方式": "品牌命中"
             })
+
+        # 主成分比對
+        ing_hits = tw_df[tw_df["tw_ing_list"].apply(lambda lst: bool(set(lst) & set(fda_ing_list)))]
+        for _, tw in ing_hits.iterrows():
+            matches.append({
+                "日期": row["日期"],
+                "FDA_品名": row["品名"],
+                "FDA_主成分": row["主成分"],
+                "藥證號碼": tw["tw_id"],
+                "中文品名": tw["tw_c_brand"],
+                "英文品名": tw["tw_e_brand"],
+                "劑型": tw["tw_form"],
+                "主成分": tw["tw_ingredient"],
+                "藥商": tw["tw_company"],
+                "比對方式": "主成分交集"
+            })
     return pd.DataFrame(matches)
+
 
 # ---------- Streamlit UI ----------
 
