@@ -73,13 +73,16 @@ KNOWN_INGREDIENTS = set(SYNONYMS.keys())
 def extract_fields(title):
     t = title.lower()
     paren = re.findall(r"\(([^)]+)\)", t)
+    ing_list = []
+
     if paren:
+        # 如果有括號，先抓括號內的成分
         ing_raw = paren[-1]
         ing_list = split_ingredients(ing_raw)
         ing_list = [tok for tok in ing_list if tok not in EXCLUDE_TOKENS]
-    else:
-        # 沒括號時，直接比對已知藥名
-        ing_list = []
+
+    # 如果沒有括號，或括號內不是藥名 → 從全文比對已知藥名
+    if not ing_list:
         for drug in KNOWN_INGREDIENTS:
             if drug in t:
                 ing_list.append(drug)
@@ -91,8 +94,11 @@ def extract_fields(title):
         product = ""
         for drug in KNOWN_INGREDIENTS:
             if drug in t:
-                product = drug.capitalize()
-                break
+                # 保留原始大小寫樣式
+                m = re.search(rf"\b({drug})\b", title, re.IGNORECASE)
+                if m:
+                    product = m.group(1)
+                    break
         if not product:
             product = title.split(":")[0].split("–")[0].split("-")[0].strip()
 
