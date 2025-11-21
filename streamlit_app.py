@@ -1,45 +1,9 @@
 import streamlit as st
 import pandas as pd
 import requests
-
-def fetch_fda_json():
-    """
-    從 openFDA API 抓取最新有警示的藥品標示資料
-    """
-    url = "https://api.fda.gov/drug/label.json?search=warnings&limit=10"
-    r = requests.get(url, timeout=30)
-    r.raise_for_status()
-    data = r.json()
-    return data["results"]
-
-def build_fda_df_from_json(results):
-    """
-    將 openFDA JSON 轉換成 DataFrame
-    """
-    rows = []
-    for item in results:
-        product = item.get("openfda", {}).get("brand_name", [""])[0]
-        ingredient = ", ".join(item.get("openfda", {}).get("substance_name", []))
-        warning = " ".join(item.get("warnings", []))
-        population = " ".join(item.get("indications_and_usage", []))
-        guidance = " ".join(item.get("dosage_and_administration", []))
-        rows.append({
-            "日期": item.get("effective_time", ""),
-            "品名": product,
-            "主成分": ingredient,
-            "安全議題": warning,
-            "用藥族群": population,
-            "注意事項與對策": guidance,
-            "source_title": product,
-            "source_url": "https://api.fda.gov/drug/label.json"
-        })
-    return pd.DataFrame(rows)
-
-
 import re
 import os
 from bs4 import BeautifulSoup
-
 
 FDA_URL = "https://www.fda.gov/drugs/drug-safety-and-availability/drug-safety-communications"
 
@@ -135,8 +99,8 @@ def fallback_seed():
     return pd.DataFrame([
         {"日期":"2025-08-28","品名":"Leqembi","主成分":"lecanemab","安全議題":"建議更早 MRI 監測","用藥族群":"阿茲海默症患者","注意事項與對策":"調整 MRI 頻率","source_title":"Leqembi (lecanemab)","source_url":FDA_URL},
         {"日期":"2025-08-27","品名":"Clozapine","主成分":"clozapine","安全議題":"移除 REMS 計畫","用藥族群":"精神分裂症患者","注意事項與對策":"依新標示調整監測","source_title":"Clozapine","source_url":FDA_URL},
-        {"日期":"2025-08-11","品名":"Copaxone","主成分":"glatiramer acetate","安全議題":"過敏性休克警示","用藥族群":"多發性硬化症患者","注意事項與對策":"出現過敏徵兆立即停藥","source_title":"Copaxone (glatiramer acetate)","source_url":FDA_URL},
-        {"日期":"2025-08-18","品名":"Transderm Scōp","主成分":"scopolamine","安全議題":"高溫併發症風險","用藥族群":"使用抗暈貼片者","注意事項與對策":"高溫環境慎用","source_title":"Transderm Scōp (scopolamine)","source_url":FDA_URL},
+        {"日期":"2025-01-22","品名":"Copaxone","主成分":"glatiramer acetate","安全議題":"過敏性休克警示","用藥族群":"多發性硬化症患者","注意事項與對策":"出現過敏徵兆立即停藥","source_title":"Copaxone (glatiramer acetate)","source_url":FDA_URL},
+        {"日期":"2025-06-18","品名":"Transderm Scōp","主成分":"scopolamine","安全議題":"高溫併發症風險","用藥族群":"使用抗暈貼片者","注意事項與對策":"高溫環境慎用","source_title":"Transderm Scōp (scopolamine)","source_url":FDA_URL},
     ])
 
 # ---------- 台灣 CSV 載入 ----------
@@ -192,15 +156,6 @@ except Exception as e:
     st.error(f"FDA 網頁抓取失敗：{e}")
     fda_df = fallback_seed()
 
-    if fda_df.empty:
-        st.warning("⚠️ FDA 網頁解析失敗，已載入 2025 種子資料。")
-        fda_df = fallback_seed()
-    else:
-        st.success(f"已解析 FDA 通報 {len(fda_df)} 筆")
-except Exception as e:
-    st.error(f"FDA 網頁抓取失敗：{e}")
-    fda_df = fallback_seed()
-
 st.subheader("FDA Current Drug Safety Communications")
 cols = [c for c in ["日期","品名","主成分","source_title"] if c in fda_df.columns]
 st.dataframe(fda_df[cols], use_container_width=True)
@@ -220,11 +175,13 @@ if not fda_df.empty and not tw_df.empty:
         ["日期","FDA_品名","FDA_主成分","藥證號碼","中文品名","英文品名","劑型","主成分","藥商"]
     ], use_container_width=True)
 
+    # 未匹配 FDA 通報
     matched_keys = set(zip(match_df["日期"], match_df["FDA_品名"], match_df["FDA_主成分"]))
     unmatched = fda_df[~fda_df.apply(lambda r: (r["日期"], r["品名"], r["主成分"]) in matched_keys, axis=1)]
     st.subheader(f"⚠️ 未匹配 FDA 通報（{len(unmatched)} 筆）")
     st.dataframe(unmatched[["日期","品名","主成分","source_title"]], use_container_width=True)
 
+    # 可能相關台灣品項（主成分交集）
     relevant_tokens = set()
     for ing in fda_df["主成分"].dropna():
         relevant_tokens.update(split_ingredients(ing))
