@@ -177,7 +177,6 @@ st.write(
     unsafe_allow_html=True
 )
 
-
 st.info("正在載入台灣品項資料…")
 try:
     tw_df = load_tw_data()
