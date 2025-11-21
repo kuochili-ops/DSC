@@ -176,20 +176,7 @@ except Exception as e:
     tw_df = pd.DataFrame()
 
 if not fda_df.empty and not tw_df.empty:
-    # 成功比對結果
-    match_df = match_tw_products(fda_df, tw_df)
-    st.subheader(f"✅ 成功比對結果（{len(match_df)} 筆）")
-    st.dataframe(match_df[
-        ["日期","FDA_品名","FDA_主成分","藥證號碼","中文品名","英文品名","劑型","主成分","藥商"]
-    ], use_container_width=True)
-
-    # 未匹配 FDA 通報
-    matched_keys = set(zip(match_df["日期"], match_df["FDA_品名"], match_df["FDA_主成分"]))
-    unmatched = fda_df[~fda_df.apply(lambda r: (r["日期"], r["品名"], r["主成分"]) in matched_keys, axis=1)]
-    st.subheader(f"⚠️ 未匹配 FDA 通報（{len(unmatched)} 筆）")
-    st.dataframe(unmatched[["日期","品名","主成分","source_title"]], use_container_width=True)
-
-    # 可能相關台灣品項（主成分交集）
+    # 只顯示可能相關台灣品項（主成分交集）
     relevant_tokens = set()
     for ing in fda_df["主成分"].dropna():
         relevant_tokens.update(split_ingredients(ing))
