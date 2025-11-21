@@ -12,28 +12,8 @@ def fetch_fda_json():
     return data["results"]
 
 def build_fda_df_from_json(results):
-    """
-    將 openFDA JSON 轉換成 DataFrame
-    """
-    rows = []
-    for item in results:
-        product = item.get("openfda", {}).get("brand_name", [""])[0]
-        ingredient = ", ".join(item.get("openfda", {}).get("substance_name", []))
-        warning = " ".join(item.get("warnings", []))
-        population = " ".join(item.get("indications_and_usage", []))
-        guidance = " ".join(item.get("dosage_and_administration", []))
-        rows.append({
-            "日期": item.get("effective_time", ""),
-            "品名": product,
-            "主成分": ingredient,
-            "安全議題": warning,
-            "用藥族群": population,
-            "注意事項與對策": guidance,
-            "source_title": product,
-            "source_url": url
-        })
-    return pd.DataFrame(rows)
-from bs4 import BeautifulSoup
+   
+Message Copilotfrom bs4 import BeautifulSoup
 import re
 import os
 
