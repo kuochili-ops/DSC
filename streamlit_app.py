@@ -59,7 +59,8 @@ def parse_current_list(html):
     if header:
         for a in header.find_next().find_all("a", href=True):
             txt = a.get_text(strip=True)
-            m = re.match(r"(\d{2}[-/]\d{2}[-/]\d{4})\s+(.*)", txt)
+            # 支援 MM-DD-YYYY 與 Month DD, YYYY 格式
+            m = re.match(r"(\d{1,2}[-/]\d{1,2}[-/]\d{4}|\w+\s+\d{1,2},\s+\d{4})\s+(.*)", txt)
             if m:
                 date = m.group(1).replace("/", "-")
                 title = m.group(2)
@@ -169,6 +170,7 @@ except Exception as e:
     tw_df = pd.DataFrame()
 
 if not fda_df.empty and not tw_df.empty:
+    # 成功比對結果
     match_df = match_tw_products(fda_df, tw_df)
     st.subheader(f"✅ 成功比對結果（{len(match_df)} 筆）")
     st.dataframe(match_df[
