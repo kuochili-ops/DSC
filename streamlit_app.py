@@ -64,12 +64,16 @@ def parse_current_list(html):
             if m:
                 date = m.group(1).replace("/", "-")
                 title = m.group(2)
-                href = a["href"]
-                items.append({"date": date, "title": title, "href": href})
             else:
-                # 如果沒有符合正則，仍然保留標題
-                items.append({"date": "", "title": txt, "href": a["href"]})
+                date = ""
+                title = txt
+            # 拼接完整 URL
+            href = a["href"]
+            if href.startswith("/"):
+                href = "https://www.fda.gov" + href
+            items.append({"date": date, "title": title, "href": href})
     return items
+
 
 
 def extract_fields(title):
@@ -165,13 +169,11 @@ except Exception as e:
 
 st.subheader("FDA Current Drug Safety Communications")
 
-# 建立可點擊的連結欄位
 fda_df_display = fda_df.copy()
 fda_df_display["原始通報"] = fda_df_display.apply(
     lambda r: f'<a href="{r["source_url"]}" target="_blank">連結</a>', axis=1
 )
 
-# 用 HTML 顯示表格，讓連結可點擊
 st.write(
     fda_df_display[["日期","品名","主成分","原始通報"]].to_html(escape=False, index=False),
     unsafe_allow_html=True
