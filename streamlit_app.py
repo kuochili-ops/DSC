@@ -1,20 +1,18 @@
 import streamlit as st
 import pandas as pd
 import requests
+
 def fetch_fda_json():
-    """
-    從 openFDA API 抓取最新有警示的藥品標示資料
-    """
     url = "https://api.fda.gov/drug/label.json?search=warnings&limit=10"
     r = requests.get(url, timeout=30)
     r.raise_for_status()
     data = r.json()
     return data["results"]
 
-def build_fda_df_from_json(results):
-   
 import re
 import os
+from bs4 import BeautifulSoup
+
 
 FDA_URL = "https://www.fda.gov/drugs/drug-safety-and-availability/drug-safety-communications"
 
