@@ -13,7 +13,6 @@ def fetch_fda_json():
 
 def build_fda_df_from_json(results):
    
-Message Copilotfrom bs4 import BeautifulSoup
 import re
 import os
 
