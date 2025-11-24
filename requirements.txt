@@ -1,5 +1,6 @@
 streamlit
-feedparser
+requests
+beautifulsoup4
 pandas
 jinja2
 pyyaml
