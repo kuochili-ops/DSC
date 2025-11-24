@@ -7,7 +7,7 @@ def match_taiwan_drugs(fda_data, csv_path):
     results = []
 
     for item in fda_data:
-        drug_name = item["drug_name"].lower()
+        drug_name = item["title"].lower()  # 修正這裡
         matched = df[df["tw_ingredient"].str.lower().str.contains(drug_name)]
 
         enriched_matches = []
@@ -24,7 +24,7 @@ def match_taiwan_drugs(fda_data, csv_path):
             })
 
         results.append({
-            "fda_drug": item["drug_name"],
+            "fda_title": item["title"],  # 改成 fda_title
             "taiwan_matches": enriched_matches
         })
     return results
