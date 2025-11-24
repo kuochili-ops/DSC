@@ -29,4 +29,6 @@ else:
 
     # Step 4: 提供 CSV 下載
     export_to_csv(taiwan_data)
+
     with open("FDA_Taiwan_Match.csv", "rb") as f:
+        st.download_button("下載比對結果 CSV", data=f, file_name="FDA_Taiwan_Match.csv")
