@@ -7,21 +7,18 @@ from utils.config_loader import load_config
 
 st.title("FDA 藥品安全監控報告")
 
-# 讀取設定檔
 config = load_config("config.yaml")
 
-# Step 1: 抓取 FDA 最新通報
-st.subheader("正在抓取 FDA 最新藥品安全通訊...")
+# Step 1: 擷取 FDA 最新通報（RSS）
+st.subheader("正在擷取 FDA 最新藥品安全通訊...")
 fda_data = get_latest_communications()
 
 if not fda_data or (len(fda_data) == 1 and fda_data[0]["title"] == "目前無新通報"):
     st.warning("目前無新通報")
 else:
     st.success(f"共取得 {len(fda_data)} 筆資料")
-
-    # 顯示 FDA 通報列表
     st.write("### FDA 最新通報列表")
-    for item in fda_data:
+    for item in fda_data[:10]:  # 顯示前 10 筆
         st.markdown(f"- **{item['date']}** | [{item['title']}]({item['url']})")
 
     # Step 2: 比對台灣藥品資料
@@ -33,3 +30,4 @@ else:
 
     # Step 4: 顯示報告
     st.subheader("報告結果")
+    st.markdown(report_html, unsafe_allow_html=True)
