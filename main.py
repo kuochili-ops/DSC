@@ -1,6 +1,6 @@
 
 import streamlit as st
-from fda_scraper import get_latest_communications
+from fda_scraper import get_fda_current_communications
 from taiwan_drug_match import match_taiwan_drugs
 from report_generator import create_html_report, export_to_csv
 
@@ -8,7 +8,7 @@ st.title("FDA 藥品安全監控報告")
 
 # Step 1: 擷取 FDA 最新通報
 st.subheader("擷取 FDA 最新藥品安全通訊...")
-fda_data = get_latest_communications()
+fda_data = get_fda_current_communications()
 
 if not fda_data or (len(fda_data) == 1 and fda_data[0]["title"] == "目前無新通報"):
     st.warning("目前無新通報")
@@ -29,4 +29,4 @@ else:
 
     # Step 4: 提供 CSV 下載
     export_to_csv(taiwan_data)
-    st.download_button("下載比對結果 CSV", data=open("FDA_Taiwan_Match.csv", "rb"), file_name="FDA_Taiwan_Match.csv")
+    with open("FDA_Taiwan_Match.csv", "rb") as f:
