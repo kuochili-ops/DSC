@@ -39,7 +39,12 @@ def get_latest_communications():
                 if link:
                     title = link.get_text(strip=True)
                     href = link["href"]
-                    full_url = f"https://www.fda.gov{href}" if href.startswith("/") else href
+
+                    # 修正 URL 拼接邏輯
+                    if href.startswith("http"):
+                        full_url = href
+                    else:
+                        full_url = f"https://www.fda.gov{href}"
 
                     items.append({
                         "date": date_text,
