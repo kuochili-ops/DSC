@@ -1,36 +1,37 @@
 
-import requests
-from bs4 import BeautifulSoup
+import feedparser
 
 def get_latest_communications():
-    url = "https://www.fda.gov/drugs/drug-safety-and-availability/drug-safety-communications"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    }
-    try:
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()
-    except requests.RequestException as e:
-        return [{"date": "", "title": f"連線錯誤：{e}", "url": ""}]
+    """
+    使用 FDA 官方 RSS Feed 擷取最新藥品安全通訊
+    回傳格式：
+    [
+        {
+            "date": "Fri, 16 May 2025 10:00:00 EST",
+            "title": "FDA requires warning about rare but severe itching...",
+            "url": "https://www.fda.gov/drugs/drug-safety-and-availability/..."
+        },
+        ...
+    ]
+    """
+    rss_url = "https://www.fda.gov/about-fda/contact-fda/rss-feeds/drug-safety-communications"
+    feed = feedparser.parse(rss_url)
 
-    soup = BeautifulSoup(response.text, "html.parser")
-    current_section = soup.find("h2", string="Current Drug Safety Communications")
     items = []
-
-    if current_section:
-        ul = current_section.find_next("ul")
-        if ul:
-            for li in ul.find_all("li"):
-                text_parts = li.get_text(strip=True).split(" ", 1)
-                date_text = text_parts[0] if len(text_parts) > 0 else ""
-                link = li.find("a")
-                if link:
-                    title = link.get_text(strip=True)
-                    href = link.get("href", "")
-                    full_url = href if href.startswith("http") else f"https://www.fda.gov{href}"
-                    items.append({"date": date_text, "title": title, "url": full_url})
+    for entry in feed.entries:
+        items.append({
+            "date": entry.published,
+            "title": entry.title,
+            "url": entry.link
+        })
 
     if not items:
         items.append({"date": "", "title": "目前無新通報", "url": ""})
 
     return items
+
+# 測試
+if __name__ == "__main__":
+    data = get_latest_communications()
+    for item in data[:5]:
+        print(item)
