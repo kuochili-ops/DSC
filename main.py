@@ -5,7 +5,7 @@ from taiwan_drug_match import match_taiwan_drugs
 from report_generator import create_html_report
 from utils.config_loader import load_config
 
-# Streamlit UI
+# Streamlit UI 標題
 st.title("FDA 藥品安全監控報告")
 
 # 讀取設定檔
@@ -18,7 +18,12 @@ fda_data = get_latest_communications()
 if not fda_data or (len(fda_data) == 1 and fda_data[0]["title"] == "目前無新通報"):
     st.warning("目前無新通報")
 else:
-    st.success(f"共取得 {len(fda_data)} 筆通報")
+    st.success(f"共取得 {len(fda_data)} 筆資料")
+
+    # 顯示 FDA 通報摘要
+    st.write("### FDA 最新通報列表")
+    for item in fda_data:
+        st.markdown(f"- **{item['date']}** | [{item['title']}]({item['url']})")
 
     # Step 2: 比對台灣藥品資料
     st.subheader("比對台灣藥品許可證資料...")
