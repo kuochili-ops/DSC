@@ -33,3 +33,4 @@ def match_drugs(fda_df, taiwan_csv_path, threshold=80):
                 "TW_Form": "",
                 "TW_Company": ""
             })
+    return pd.DataFrame(results)
