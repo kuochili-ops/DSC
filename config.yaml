@@ -1,0 +1,9 @@
+recipients:
+  - "user1@example.com"
+  - "user2@example.com"
+
+smtp:
+  server: "smtp.example.com"
+  port: 587
+  username: "your_email@example.com"
+  password: "your_password"
