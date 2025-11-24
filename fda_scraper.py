@@ -1,39 +1,37 @@
 
+# fda_scraper.py
 import requests
-import pandas as pd
 from bs4 import BeautifulSoup
+import pandas as pd
 
-def fetch_fda_drug_safety_rss():
+def fetch_fda_announcements():
     """
-    從 FDA RSS 取得藥品安全公告，回傳 DataFrame
-    欄位：date, title, link
+    從 FDA Drug Safety Communications 頁面擷取公告資料
+    回傳 DataFrame，欄位：date, title, url
     """
-    rss_url = "https://www.fda.gov/about-fda/contact-fda/rss-feeds/drug-safety-communications"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-        "Accept": "application/rss+xml, application/xml;q=0.9, */*;q=0.8"
-    }
+    url = "https://www.fda.gov/drugs/drug-safety-and-availability/drug-safety-communications"
+    headers = {"User-Agent": "Mozilla/5.0"}
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
 
-    try:
-        response = requests.get(rss_url, headers=headers, timeout=10)
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        print(f"⚠ 無法取得 FDA RSS：{e}")
-        return pd.DataFrame(columns=["date", "title", "link"])  # 回傳空表格
-
-    # 解析 RSS XML
-    soup = BeautifulSoup(response.content, "xml")
-    items = soup.find_all("item")
-
-    if not items:
-        print("⚠ RSS 無資料，請檢查 FDA 網站或 RSS URL")
-        return pd.DataFrame(columns=["date", "title", "link"])
+    soup = BeautifulSoup(response.text, "html.parser")
+    items = soup.select("li")  # 抓取所有 <li>
 
     data = []
     for item in items:
-        title = item.title.get_text(strip=True) if item.title else ""
-        link = item.link.get_text(strip=True) if item.link else ""
-        pub_date = item.pubDate.get_text(strip=True) if item.pubDate else ""
-        data.append({"date": pub_date, "title": title, "link": link})
+        text = item.get_text(strip=True)
+        link_tag = item.find("a")
+        if link_tag:
+            href = link_tag.get("href")
+            title = link_tag.get_text(strip=True)
+            date = text.split(" ")[0] if "-" in text.split(" ")[0] else ""
+            full_url = "https://www.fda.gov" + href
+            data.append({"date": date, "title": title, "url": full_url})
 
     return pd.DataFrame(data)
+
+# 測試並輸出 CSV
+if __name__ == "__main__":
+    df = fetch_fda_announcements()
+    df.to_csv("FDA_Announcements.csv", index=False)
+    print("✅ 已輸出 FDA_Announcements.csv")
