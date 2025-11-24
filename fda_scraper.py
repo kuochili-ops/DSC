@@ -1,24 +1,40 @@
 
 import requests
-from bs4 import BeautifulSoup
 import pandas as pd
+from bs4 import BeautifulSoup
 
-def fetch_fda_drug_safety():
-    url = "https://www.fda.gov/drugs/drug-safety-and-availability/drug-safety-communications"
-    response = requests.get(url)
+def fetch_fda_drug_safety_rss():
+    rss_url = "https://www.fda.gov/about-fda/contact-fda/rss-feeds/drug-safety-communications"
+    headers = {"User-Agent": "Mozilla/5.0"}
+    response = requests.get(rss_url, headers=headers)
     response.raise_for_status()
-    soup = BeautifulSoup(response.text, "html.parser")
 
-    # 抓取公告列表
-    items = soup.select("div.views-row")
+    soup = BeautifulSoup(response.content, "xml")
+    items = soup.find_all("item")
     data = []
     for item in items:
-        date_tag = item.select_one(".date-display-single")
-        title_tag = item.select_one("h3 a")
-        if date_tag and title_tag:
-            date = date_tag.get_text(strip=True)
-            title = title_tag.get_text(strip=True)
-            link = "https://www.fda.gov" + title_tag.get("href")
-            data.append({"date": date, "title": title, "link": link})
-    
+        title = item.title.get_text(strip=True)
+        link = item.link.get_text(strip=True)
+        pub_date = item.pubDate.get_text(strip=True)
+        data.append({"date": pub_date, "title": title, "link": link})
+    return pd.DataFrame(data)
+
+import requests
+import pandas as pd
+from bs4 import BeautifulSoup
+
+def fetch_fda_drug_safety_rss():
+    rss_url = "https://www.fda.gov/about-fda/contact-fda/rss-feeds/drug-safety-communications"
+    headers = {"User-Agent": "Mozilla/5.0"}
+    response = requests.get(rss_url, headers=headers)
+    response.raise_for_status()
+
+    soup = BeautifulSoup(response.content, "xml")
+    items = soup.find_all("item")
+    data = []
+    for item in items:
+        title = item.title.get_text(strip=True)
+        link = item.link.get_text(strip=True)
+        pub_date = item.pubDate.get_text(strip=True)
+        data.append({"date": pub_date, "title": title, "link": link})
     return pd.DataFrame(data)
