@@ -1,17 +1,26 @@
-
+import streamlit as st
 from fda_scraper import get_latest_communications
 from taiwan_drug_match import match_taiwan_drugs
 from report_generator import create_html_report
 from utils.config_loader import load_config
 
-def main():
-    config = load_config("config.yaml")
-    fda_data = get_latest_communications()
-    taiwan_data = match_taiwan_drugs(fda_data, csv_path="37_2c.csv")
-    report_html = create_html_report(taiwan_data)
+st.title("FDA 藥品安全監控報告")
 
-    # 測試輸出 HTML 報告
-    print(report_html)
+# 讀取設定檔
+config = load_config("config.yaml")
 
-if __name__ == "__main__":
-    main()
+# 抓取 FDA 最新通報
+st.subheader("正在抓取 FDA 最新藥品安全通訊...")
+fda_data = get_latest_communications()
+st.success(f"共取得 {len(fda_data)} 筆通報")
+
+# 比對台灣藥品資料
+st.subheader("比對台灣藥品許可證資料...")
+taiwan_data = match_taiwan_drugs(fda_data, csv_path="37_2c.csv")
+
+# 產生 HTML 報告
+report_html = create_html_report(taiwan_data)
+
+# 顯示報告
+st.subheader("報告結果")
+st.markdown(report_html, unsafe_allow_html=True)
