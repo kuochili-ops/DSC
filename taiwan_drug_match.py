@@ -1,25 +1,49 @@
 
+import re
 import pandas as pd
 from utils.atc_mapper import map_to_atc
 
-def match_taiwan_drugs(fda_data, csv_path):
-    df = pd.read_csv(csv_path)
+def extract_drug_name(title):
+    """
+    從 FDA 標題中抽取藥品名稱：
+    - 優先取括號內的內容（通常是成分名）
+    - 如果沒有括號，取第一個單字（簡單策略）
+    """
+    if not title:
+        return ""
+    match = re.search(r"\((.*?)\)", title)
+    if match:
+        return match.group(1).lower()
+    return title.split()[0].lower()
 
-    # 確保欄位沒有 NaN
+def match_taiwan_drugs(fda_data, csv_path):
+    """
+    比對 FDA 通報藥品與台灣藥品許可證資料
+    :param fda_data: FDA 最新通報列表
+    :param csv_path: 台灣藥品許可證 CSV 檔案路徑
+    :return: 比對結果列表
+    """
+    # 讀取台灣藥品資料
+    df = pd.read_csv(csv_path)
     df["tw_ingredient"] = df["tw_ingredient"].fillna("").astype(str)
+    df["tw_e_brand"] = df["tw_e_brand"].fillna("").astype(str)
 
     results = []
 
     for item in fda_data:
-        drug_name = item.get("title", "").lower().strip()
+        title = item.get("title", "")
+        drug_name = extract_drug_name(title)
 
-        # 如果 drug_name 是空字串，直接跳過
         if not drug_name:
-            results.append({"fda_title": item.get("title", ""), "taiwan_matches": []})
+            results.append({"fda_title": title, "taiwan_matches": []})
             continue
 
-        # 使用 na=False 避免 NaN 造成錯誤
+        # Step 1: 先比對主成分
         matched = df[df["tw_ingredient"].str.lower().str.contains(drug_name, na=False)]
+
+        # Step 2: 如果沒找到，再比對英文品名
+        if matched.empty:
+            matched = df[df["tw_e_brand"].str.lower().str.contains(drug_name, na=False)]
 
         enriched_matches = []
         for _, row in matched.iterrows():
@@ -35,7 +59,7 @@ def match_taiwan_drugs(fda_data, csv_path):
             })
 
         results.append({
-            "fda_title": item.get("title", ""),
+            "fda_title": title,
             "taiwan_matches": enriched_matches
         })
 
