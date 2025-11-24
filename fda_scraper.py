@@ -1,5 +1,4 @@
 
-# fda_scraper.py
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -23,15 +22,19 @@ def fetch_fda_announcements():
         link_tag = item.find("a")
         if link_tag:
             href = link_tag.get("href")
-            title = link_tag.get_text(strip=True)
-            date = text.split(" ")[0] if "-" in text.split(" ")[0] else ""
-            full_url = "https://www.fda.gov" + href
-            data.append({"date": date, "title": title, "url": full_url})
+            if href and isinstance(href, str):  # ✅ 檢查 href 是否存在且為字串
+                title = link_tag.get_text(strip=True)
+                date = text.split(" ")[0] if "-" in text.split(" ")[0] else ""
+                full_url = "https://www.fda.gov" + href
+                data.append({"date": date, "title": title, "url": full_url})
 
     return pd.DataFrame(data)
 
 # 測試並輸出 CSV
 if __name__ == "__main__":
     df = fetch_fda_announcements()
-    df.to_csv("FDA_Announcements.csv", index=False)
-    print("✅ 已輸出 FDA_Announcements.csv")
+    if df.empty:
+        print("⚠ 沒有擷取到任何公告，請檢查頁面結構或網路連線。")
+    else:
+        df.to_csv("FDA_Announcements.csv", index=False)
+        print(f"✅ 已輸出 FDA_Announcements.csv，共 {len(df)} 筆資料。")
