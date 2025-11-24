@@ -1,32 +1,18 @@
 
-import re
 import pandas as pd
 
-def extract_drug_name(title):
-    if not title:
-        return ""
-    match = re.search(r"\((.*?)\)", title)
-    if match:
-        return match.group(1).lower()
-    return title.split()[0].lower()
-
-def match_taiwan_drugs(fda_data, csv_path):
+def match_taiwan_drugs(fda_data, csv_path="37_2c.csv"):
     df = pd.read_csv(csv_path)
     df["tw_ingredient"] = df["tw_ingredient"].fillna("").astype(str)
-    df["tw_e_brand"] = df["tw_e_brand"].fillna("").astype(str)
 
     results = []
     for item in fda_data:
-        title = item.get("title", "")
-        drug_name = extract_drug_name(title)
-
-        if not drug_name:
-            results.append({"fda_title": title, "taiwan_matches": []})
+        ingredient = item.get("ingredient", "").lower().strip()
+        if not ingredient:
+            results.append({"fda_title": item.get("title", ""), "matches": []})
             continue
 
-        matched = df[df["tw_ingredient"].str.lower().str.contains(drug_name, na=False)]
-        if matched.empty:
-            matched = df[df["tw_e_brand"].str.lower().str.contains(drug_name, na=False)]
+        matched = df[df["tw_ingredient"].str.lower().str.contains(ingredient, na=False)]
 
         enriched_matches = []
         for _, row in matched.iterrows():
@@ -38,6 +24,10 @@ def match_taiwan_drugs(fda_data, csv_path):
                 "tw_company": row["tw_company"]
             })
 
-        results.append({"fda_title": title, "taiwan_matches": enriched_matches})
+        results.append({
+            "fda_title": item.get("title", ""),
+            "ingredient": ingredient,
+            "matches": enriched_matches
+        })
 
     return results
