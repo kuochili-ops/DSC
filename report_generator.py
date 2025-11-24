@@ -7,8 +7,14 @@ def create_html_report(taiwan_data):
     {% for item in taiwan_data %}
         <h3>{{ item.fda_title }}</h3>
         {% if item.taiwan_matches %}
-            <table border="1">
-                <tr><th>藥證字號</th><th>中文品名</th><th>英文品名</th><th>劑型</th><th>藥商</th></tr>
+            <table border="1" style="border-collapse: collapse; width: 100%;">
+                <tr>
+                    <th>藥證字號</th>
+                    <th>中文品名</th>
+                    <th>英文品名</th>
+                    <th>劑型</th>
+                    <th>藥商</th>
+                </tr>
                 {% for drug in item.taiwan_matches %}
                     <tr>
                         <td>{{ drug.tw_id }}</td>
@@ -20,8 +26,9 @@ def create_html_report(taiwan_data):
                 {% endfor %}
             </table>
         {% else %}
-            <p>未找到對應的台灣藥品</p>
+            <p style="color:red;">未找到對應的台灣藥品</p>
         {% endif %}
+        <hr>
     {% endfor %}
     """
     return Template(template).render(taiwan_data=taiwan_data)
