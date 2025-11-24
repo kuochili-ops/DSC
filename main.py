@@ -16,7 +16,7 @@ else:
     st.success(f"共取得 {len(fda_data)} 筆資料")
     st.write("### FDA 最新通報列表")
     for item in fda_data[:10]:
-        st.markdown(f"- **{item['date']}** | [{item['title']}]({item['url']})")
+        st.markdown(f"- **{item['title']}** ([連結]({item['url']}))")
 
     # Step 2: 比對台灣藥品資料
     st.subheader("比對台灣藥品許可證資料...")
