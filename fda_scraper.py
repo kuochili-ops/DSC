@@ -40,7 +40,7 @@ def fetch_fda_announcements():
     # 防呆：確保有 date 欄位才轉換
     if "date" in df.columns and not df.empty:
         df["date"] = pd.to_datetime(df["date"], errors="coerce").dt.strftime("%d-%m-%Y")
-        df["date"] = df["date"].fillna("")
+        df["date"] = df["date"].where(df["date"].notna(), "")
     else:
         df["date"] = ""
 
