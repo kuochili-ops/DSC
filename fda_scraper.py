@@ -15,7 +15,7 @@ def fetch_fda_announcements():
     soup = BeautifulSoup(res.text, "html.parser")
     results = []
 
-    for li in soup.select("div.article-text ul li"):
+    for li in soup.select("ul li"):
         link = li.find("a")
         if not link:
             continue
