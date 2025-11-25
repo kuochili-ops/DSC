@@ -14,7 +14,11 @@ DMY_REGEX = r"^([0-2]?\d|3[01])[-/](0?\d|1[0-2])-(19|20)\d{2}"
 def filter_dmy(df, date_col="date"):
     """保留開頭是日期的公告，不管後面有什麼字"""
     if date_col in df.columns:
-        mask = df[date_col].astype(str).apply(lambda x: re.match(DMY_REGEX, x) is not None)
+        # 先去除前後空白與不可見字元
+        cleaned = df[date_col].astype(str).str.strip()
+        mask = cleaned.apply(lambda x: re.match(DMY_REGEX, x) is not None)
+        df = df.copy()
+        df[date_col] = cleaned
         return df[mask].copy()
     return df
 
