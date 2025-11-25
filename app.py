@@ -1,28 +1,11 @@
 import streamlit as st
 import pandas as pd
 import io
-from datetime import datetime
 from fda_scraper import fetch_fda_announcements
 from matcher import match_drugs
 
 st.set_page_config(page_title="FDA 藥品安全公告比對", layout="wide")
 st.title("FDA 藥品安全公告比對台灣藥品")
-
-def filter_dmy(df, date_col="date"):
-    """保留開頭是日期的公告，不管後面有什麼字"""
-    if date_col in df.columns:
-        cleaned = df[date_col].astype(str).str.strip()
-        def is_date_like(x):
-            try:
-                pd.to_datetime(x, errors="raise")
-                return True
-            except Exception:
-                return False
-        mask = cleaned.apply(is_date_like)
-        df = df.copy()
-        df[date_col] = cleaned
-        return df[mask].copy()
-    return df
 
 def format_date(df, date_col="date"):
     """將日期欄位轉成 dd-mm-yyyy 格式，有日期才轉換，沒有就保持空白字串"""
@@ -31,7 +14,6 @@ def format_date(df, date_col="date"):
         df[date_col] = dates.dt.strftime("%d-%m-%Y")
         df[date_col] = df[date_col].where(dates.notna(), "")
     return df
-
 
 # --- Step 1: 抓取 FDA 公告 ---
 st.subheader("最新 FDA 藥品安全公告")
@@ -42,19 +24,18 @@ st.markdown(
 if st.button("更新公告（FDA 網頁）"):
     with st.spinner("正在抓取 FDA 公告..."):
         fda_df = fetch_fda_announcements()
-        if fda_df.empty or "date" not in fda_df.columns:
-            st.error("⚠ 無法取得 FDA 公告或資料格式錯誤。")
+        if fda_df.empty:
+            st.error("⚠ 無法取得 FDA 公告或沒有日期的項目。")
         else:
-            fda_df = filter_dmy(fda_df, date_col="date")
             fda_df = format_date(fda_df, date_col="date")
             st.session_state['fda_df'] = fda_df
             st.success(f"✅ 公告更新完成，共 {len(fda_df)} 筆資料。")
 
 if 'fda_df' in st.session_state:
-    st.subheader("FDA 藥品安全公告：")
+    st.subheader("FDA 藥品安全公告（只保留有日期的項目）")
     st.dataframe(st.session_state['fda_df'], use_container_width=True)
 
-# --- Step 2: 直接讀取台灣藥品資料（同目錄固定檔案） ---
+# --- Step 2: 讀取台灣藥品資料 ---
 st.subheader("台灣藥品資料（自動載入）")
 try:
     tw_df = pd.read_csv("37_2c.csv")
