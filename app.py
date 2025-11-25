@@ -1,11 +1,22 @@
 import streamlit as st
 import pandas as pd
 import io
+import re
 from fda_scraper import fetch_fda_announcements  # ✅ 使用最新擷取函式
 from matcher import match_drugs
 
 st.set_page_config(page_title="FDA 藥品安全公告比對", layout="wide")
 st.title("FDA 藥品安全公告比對台灣藥品")
+
+# --- 日期正則 (dd-mm-yyyy 格式) ---
+DMY_REGEX = re.compile(r"\b([0-2]?\d|3[01])[-/](0?\d|1[0-2])-(19|20)\d{2}")
+
+def filter_dmy(df, date_col="date"):
+    """只保留符合日-月-年格式的公告"""
+    if date_col in df.columns:
+        mask = df[date_col].astype(str).str.match(DMY_REGEX)
+        return df[mask].copy()
+    return df
 
 # --- Step 1: 抓取 FDA 公告 ---
 st.subheader("最新 FDA 藥品安全公告")
@@ -15,14 +26,14 @@ if st.button("更新公告（FDA 網頁）"):
         if fda_df.empty:
             st.error("⚠ 無法取得 FDA 公告，請改用 CSV 上傳模式。")
         else:
-            # ✅ 只保留有標註日期的公告
-            fda_df = fda_df[fda_df["date"].notna() & (fda_df["date"].astype(str).str.strip() != "")]
+            # ✅ 過濾掉非日期的項目
+            fda_df = filter_dmy(fda_df, date_col="date")
             st.session_state['fda_df'] = fda_df
             st.success(f"✅ 公告更新完成，共 {len(fda_df)} 筆資料。")
 
 # 顯示擷取結果
 if 'fda_df' in st.session_state:
-    st.write("📋 FDA 公告清單（只保留有日期）：")
+    st.write("📋 FDA 公告清單（只保留符合日-月-年格式）：")
     st.dataframe(st.session_state['fda_df'], use_container_width=True)
 
 # --- Step 2: 上傳 FDA 公告 CSV（備援模式） ---
@@ -30,8 +41,7 @@ st.subheader("或上傳 FDA 公告 CSV（備援）")
 fda_csv = st.file_uploader("選擇 FDA 公告 CSV", type="csv")
 if fda_csv:
     fda_df = pd.read_csv(fda_csv)
-    # ✅ 只保留有日期的公告
-    fda_df = fda_df[fda_df["date"].notna() & (fda_df["date"].astype(str).str.strip() != "")]
+    fda_df = filter_dmy(fda_df, date_col="date")  # ✅ 過濾
     st.session_state['fda_df'] = fda_df
     st.success(f"✅ 已載入 FDA 公告 CSV，共 {len(fda_df)} 筆資料。")
 
