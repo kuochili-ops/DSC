@@ -30,7 +30,7 @@ def fetch_fda_announcements():
         results.append({
             "date": raw_date,
             "title": f"[{title}]({href})",  # ✅ 標題直接附超連結
-            "text": link.get_text(strip=True)  # 先顯示英文原文
+            "text": link.get_text(strip=True)  # 摘要（目前英文原文）
         })
 
     df = pd.DataFrame(results)
@@ -39,7 +39,7 @@ def fetch_fda_announcements():
         df = df[df["date"].str.match(r"\d{2}-\d{2}-\d{4}", na=False)].copy()
         df["date"] = pd.to_datetime(df["date"], errors="coerce").dt.strftime("%d-%m-%Y")
         df["date"] = df["date"].fillna("")
-        df = df.head(7)
+        df = df.head(7)  # ✅ 只保留最新 7 筆
     else:
         df = pd.DataFrame(columns=["date", "title", "text"])
 
