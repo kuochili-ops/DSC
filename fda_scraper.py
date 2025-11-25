@@ -31,9 +31,11 @@ def fetch_fda_announcements():
         date_str = text[:10]
 
         try:
+            # 如果是 mm-dd-yyyy → 轉成 dd-mm-yyyy
             date_fmt = datetime.strptime(date_str, "%m-%d-%Y").strftime("%d-%m-%Y")
         except Exception:
-            date_fmt = date_str  # 如果已經是 dd-mm-yyyy 就保留
+            # 如果已經是 dd-mm-yyyy → 保留
+            date_fmt = date_str
 
         results.append({
             "date": date_fmt,
