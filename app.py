@@ -42,8 +42,8 @@ st.markdown(
 if st.button("更新公告（FDA 網頁）"):
     with st.spinner("正在抓取 FDA 公告..."):
         fda_df = fetch_fda_announcements()
-        if fda_df.empty:
-            st.error("⚠ 無法取得 FDA 公告。")
+        if fda_df.empty or "date" not in fda_df.columns:
+            st.error("⚠ 無法取得 FDA 公告或資料格式錯誤。")
         else:
             fda_df = filter_dmy(fda_df, date_col="date")
             fda_df = format_date(fda_df, date_col="date")
