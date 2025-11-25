@@ -16,7 +16,8 @@ def filter_dmy(df, date_col="date"):
     if date_col in df.columns:
         # 先去除前後空白與不可見字元
         cleaned = df[date_col].astype(str).str.strip()
-        mask = cleaned.apply(lambda x: re.match(DMY_REGEX, x) is not None)
+        # 只檢查前 10 個字元是否符合日期格式
+        mask = cleaned.apply(lambda x: re.match(DMY_REGEX, x[:10]) is not None)
         df = df.copy()
         df[date_col] = cleaned
         return df[mask].copy()
