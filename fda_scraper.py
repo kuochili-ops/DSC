@@ -6,8 +6,10 @@ from datetime import datetime
 def fetch_fda_announcements():
     url = "https://www.fda.gov/drugs/drug-safety-and-availability/drug-safety-communications"
     headers = {"User-Agent": "Mozilla/5.0"}
-    res = requests.get(url, headers=headers, timeout=10)
-    if res.status_code != 200:
+    try:
+        res = requests.get(url, headers=headers, timeout=10)
+        res.raise_for_status()
+    except Exception:
         return pd.DataFrame()
 
     soup = BeautifulSoup(res.text, "html.parser")
@@ -23,16 +25,18 @@ def fetch_fda_announcements():
 
         title = title_tag.get_text(strip=True)
         href = title_tag.get("href")
-        if href and not href.startswith("http"):
+        if not href:
+            continue
+        if not href.startswith("http"):
             href = "https://www.fda.gov" + href
 
-        # 日期處理
+        # 日期處理：mm/dd/yyyy → dd-mm-yyyy
         if date_tag:
             raw_date = date_tag.get_text(strip=True)
             try:
                 date_fmt = datetime.strptime(raw_date, "%m/%d/%Y").strftime("%d-%m-%Y")
             except Exception:
-                date_fmt = raw_date
+                date_fmt = ""
         else:
             date_fmt = ""
 
