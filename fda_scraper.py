@@ -19,26 +19,29 @@ def fetch_fda_announcements():
     soup = BeautifulSoup(res.text, "html.parser")
 
     results = []
-    # FDA 公告通常在 <li> 或 <div class="views-row"> 裡
-    for li in soup.select("li, div.views-row"):
-        link = li.find("a")
+    # FDA 公告通常在 div.views-row 裡
+    for row in soup.select("div.views-row"):
+        link = row.find("a")
         if not link:
             continue
 
         title = link.get("title") or link.get_text(strip=True)
         href = link.get("href")
         if not href:
-            continue  # 跳過沒有 href 的項目
+            continue
         if not href.startswith("http"):
             href = "https://www.fda.gov" + href
 
-        # 嘗試抓日期：在 <li> 的文字前段
-        text = li.get_text(" ", strip=True)
-        date_str = text[:10] if text[:10].count("-") == 2 else ""
-
-        try:
-            date_fmt = datetime.strptime(date_str, "%m-%d-%Y").strftime("%d-%m-%Y")
-        except Exception:
+        # 日期通常在 span.date-display-single
+        date_tag = row.find("span", class_="date-display-single")
+        if date_tag:
+            raw_date = date_tag.get_text(strip=True)
+            try:
+                # FDA 頁面日期格式通常是 mm/dd/yyyy
+                date_fmt = datetime.strptime(raw_date, "%m/%d/%Y").strftime("%d-%m-%Y")
+            except Exception:
+                date_fmt = ""
+        else:
             date_fmt = ""
 
         results.append({
