@@ -2,22 +2,28 @@ import streamlit as st
 import pandas as pd
 import io
 import re
+from datetime import datetime
 from fda_scraper import fetch_fda_announcements
 from matcher import match_drugs
 
 st.set_page_config(page_title="FDA 藥品安全公告比對", layout="wide")
 st.title("FDA 藥品安全公告比對台灣藥品")
 
-# --- 日期正則 (只辨識開頭是 dd-mm-yyyy，不管後面有什麼) ---
-DMY_REGEX = r"^([0-2]?\d|3[01])[-/](0?\d|1[0-2])-(19|20)\d{2}"
-
 def filter_dmy(df, date_col="date"):
     """保留開頭是日期的公告，不管後面有什麼字"""
     if date_col in df.columns:
         # 先去除前後空白與不可見字元
         cleaned = df[date_col].astype(str).str.strip()
-        # 只檢查前 10 個字元是否符合日期格式
-        mask = cleaned.apply(lambda x: re.match(DMY_REGEX, x[:10]) is not None)
+
+        def is_date_like(x):
+            try:
+                # 嘗試解析前 10 個字元
+                datetime.strptime(x[:10], "%m-%d-%Y")
+                return True
+            except ValueError:
+                return False
+
+        mask = cleaned.apply(is_date_like)
         df = df.copy()
         df[date_col] = cleaned
         return df[mask].copy()
