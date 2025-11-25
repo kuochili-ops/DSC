@@ -27,11 +27,10 @@ def fetch_fda_announcements():
 
         # 直接抓 li 的前段文字 (包含 dd-mm-yyyy FDA ...)
         text = li.get_text(" ", strip=True)
-        date_str = text.split(" ")[0:2]  # 前兩個字串 → 日期 + FDA
-        date_fmt = " ".join(date_str)
+        date_fmt = text[:15]  # 例如 "08-28-2025 FDA"
 
         results.append({
-            "date": date_fmt,   # 例如 "28-08-2025 FDA"
+            "date": date_fmt,
             "title": title,
             "url": href
         })
