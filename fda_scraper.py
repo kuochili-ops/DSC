@@ -8,13 +8,13 @@ def fetch_fda_announcements():
     try:
         res = requests.get(url, headers=headers, timeout=10)
         res.raise_for_status()
-    except Exception:
+    except Exception as e:
+        print(f"Error fetching FDA announcements: {e}")
         return pd.DataFrame()
 
     soup = BeautifulSoup(res.text, "html.parser")
     results = []
 
-    # 公告清單在 .article-text 裡的 <li>
     for li in soup.select("div.article-text ul li"):
         link = li.find("a")
         if not link:
@@ -25,14 +25,18 @@ def fetch_fda_announcements():
         if href and not href.startswith("http"):
             href = "https://www.fda.gov" + href
 
-        # 直接抓 li 的前段文字 (包含 dd-mm-yyyy FDA ...)
-        text = li.get_text(" ", strip=True)
-        date_fmt = text[:15]  # 例如 "08-28-2025 FDA"
+        text = link.get_text(strip=True)
+        raw_date = li.get_text(" ", strip=True)[:10]  # 只取日期部分
 
         results.append({
-            "date": date_fmt,
+            "date": raw_date,
             "title": title,
+            "text": text,
             "url": href
         })
 
-    return pd.DataFrame(results)
+    df = pd.DataFrame(results)
+    # 標準化日期格式
+    df["date"] = pd.to_datetime(df["date"], errors="coerce").dt.strftime("%d-%m-%Y")
+    df["date"] = df["date"].fillna("")
+    return df
