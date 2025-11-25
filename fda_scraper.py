@@ -19,13 +19,12 @@ def fetch_fda_announcements():
     soup = BeautifulSoup(res.text, "html.parser")
 
     results = []
-
-    # 找到 Current Drug Safety Communications 區塊
+    # 找到「Current Drug Safety Communications」區塊
     current_section = soup.find("div", class_="view-current-drug-safety-communications")
     if not current_section:
         return pd.DataFrame()
 
-    # 只抓取 Current 到 Previous 之間的公告
+    # 只抓取 Current 區塊的公告
     for li in current_section.select("li"):
         link = li.find("a")
         if not link:
@@ -38,15 +37,16 @@ def fetch_fda_announcements():
         if not href.startswith("http"):
             href = "https://www.fda.gov" + href
 
-        # 日期在 <li> 前段，通常是 dd-mm-yyyy
+        # 日期在 <li> 前段，取前 10 個字元
         text = li.get_text(" ", strip=True)
-        date_str = text.split(" ")[0] if "-" in text.split(" ")[0] else ""
+        date_str = text[:10]
 
-        # 確保格式正確
+        # 嘗試轉換成 dd-mm-yyyy
         try:
             date_fmt = datetime.strptime(date_str, "%m-%d-%Y").strftime("%d-%m-%Y")
         except Exception:
-            date_fmt = date_str  # 如果已經是 dd-mm-yyyy，就直接保留
+            # 如果已經是 dd-mm-yyyy，就直接保留
+            date_fmt = date_str
 
         results.append({
             "date": date_fmt,
