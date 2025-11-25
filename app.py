@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import io
-import re
 from datetime import datetime
 from fda_scraper import fetch_fda_announcements
 from matcher import match_drugs
