@@ -2,17 +2,17 @@ import streamlit as st
 import pandas as pd
 import io
 import re
-from fda_scraper import fetch_fda_announcements  # ✅ 使用最新擷取函式
+from fda_scraper import fetch_fda_announcements
 from matcher import match_drugs
 
 st.set_page_config(page_title="FDA 藥品安全公告比對", layout="wide")
 st.title("FDA 藥品安全公告比對台灣藥品")
 
 # --- 日期正則 (允許日期後面有字串，例如 '08-28-2025FDA') ---
-DMY_REGEX = re.compile(r"\b([0-2]?\d|3[01])[-/](0?\d|1[0-2])-(19|20)\d{2}.*")
+DMY_REGEX = re.compile(r"^([0-2]?\d|3[01])[-/](0?\d|1[0-2])-(19|20)\d{2}")
 
 def filter_dmy(df, date_col="date"):
-    """只保留符合日-月-年格式的公告"""
+    """只保留符合日-月-年格式開頭的公告"""
     if date_col in df.columns:
         mask = df[date_col].astype(str).str.match(DMY_REGEX)
         return df[mask].copy()
@@ -56,7 +56,7 @@ if uploaded_file and 'fda_df' in st.session_state:
     # --- Step 4: 比對 ---
     if st.button("開始比對"):
         with st.spinner("比對中..."):
-            result_df = match_drugs(st.session_state['fda_df'], tw_df)  # ✅ 傳入 DataFrame
+            result_df = match_drugs(st.session_state['fda_df'], tw_df)
             st.session_state['result_df'] = result_df
             st.success(f"✅ 比對完成，共 {len(result_df)} 筆公告。")
 
@@ -67,7 +67,7 @@ if 'result_df' in st.session_state:
 
     buffer = io.BytesIO()
     st.session_state['result_df'].to_excel(buffer, index=False)
-    buffer.seek(0)  # ✅ 確保下載正確
+    buffer.seek(0)
     st.download_button(
         label="📥 下載 Excel 報表",
         data=buffer,
