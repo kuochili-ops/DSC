@@ -15,22 +15,15 @@ def fetch_fda_announcements():
     soup = BeautifulSoup(res.text, "html.parser")
     results = []
 
-    # 找到 Current Drug Safety Communications 區塊
-    current_section = soup.find("div", class_="view-current-drug-safety-communications")
-    if not current_section:
-        return pd.DataFrame()
-
-    # 在該區塊內抓所有 <li>
-    for li in current_section.select("ul > li"):
+    # 公告清單在 .article-text 裡的 <li>
+    for li in soup.select("div.article-text ul li"):
         link = li.find("a")
         if not link:
             continue
 
         title = link.get("title") or link.get_text(strip=True)
         href = link.get("href")
-        if not href:
-            continue
-        if not href.startswith("http"):
+        if href and not href.startswith("http"):
             href = "https://www.fda.gov" + href
 
         # 日期在 <li> 前段，取前 10 個字元
