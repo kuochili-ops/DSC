@@ -40,10 +40,10 @@ if 'fda_df' in st.session_state:
     st.write("📋 FDA 公告清單（只保留含日期的項目）：")
     st.dataframe(st.session_state['fda_df'], use_container_width=True)
 
-# --- Step 2: 直接讀取台灣藥品資料（固定路徑） ---
+# --- Step 2: 直接讀取台灣藥品資料（同目錄固定檔案） ---
 st.subheader("台灣藥品資料（自動載入）")
 try:
-    tw_df = pd.read_csv("/data/37_2c.csv")
+    tw_df = pd.read_csv("37_2c.csv")   # ✅ 同目錄直接讀取
     st.write(f"📦 台灣藥品資料筆數：{len(tw_df)}")
     st.session_state['tw_df'] = tw_df
 except Exception as e:
