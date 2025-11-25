@@ -54,7 +54,7 @@ def match_drugs(fda_df, tw_df):
     result_df = pd.DataFrame(results)
 
     # 🔎 篩選藥商包含「中國化學」或「中化裕民」
-    mask = result_df["tw_company"].astype(str).str.contains("中國化學|中化裕民", case=False, na=False)
-    result_df = result_df[mask].copy()
+    special_df = result_df[result_df["tw_company"].astype(str).str.contains("中國化學|中化裕民", case=False, na=False)].copy()
 
-    return result_df
+    # 回傳兩個表格：完整結果 + 特殊藥商
+    return result_df, special_df
