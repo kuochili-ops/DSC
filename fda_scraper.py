@@ -36,7 +36,12 @@ def fetch_fda_announcements():
         })
 
     df = pd.DataFrame(results)
-    # 標準化日期格式
-    df["date"] = pd.to_datetime(df["date"], errors="coerce").dt.strftime("%d-%m-%Y")
-    df["date"] = df["date"].fillna("")
+
+    # 防呆：確保有 date 欄位才轉換
+    if "date" in df.columns and not df.empty:
+        df["date"] = pd.to_datetime(df["date"], errors="coerce").dt.strftime("%d-%m-%Y")
+        df["date"] = df["date"].fillna("")
+    else:
+        df["date"] = ""
+
     return df
