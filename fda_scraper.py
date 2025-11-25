@@ -1,7 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-from datetime import datetime
 
 def fetch_fda_announcements():
     url = "https://www.fda.gov/drugs/drug-safety-and-availability/drug-safety-communications"
@@ -26,19 +25,13 @@ def fetch_fda_announcements():
         if href and not href.startswith("http"):
             href = "https://www.fda.gov" + href
 
-        # 日期在 <li> 前段，取前 10 個字元
+        # 直接抓 li 的前段文字 (包含 dd-mm-yyyy FDA ...)
         text = li.get_text(" ", strip=True)
-        date_str = text[:10]
-
-        try:
-            # 如果是 mm-dd-yyyy → 轉成 dd-mm-yyyy
-            date_fmt = datetime.strptime(date_str, "%m-%d-%Y").strftime("%d-%m-%Y")
-        except Exception:
-            # 如果已經是 dd-mm-yyyy → 保留
-            date_fmt = date_str
+        date_str = text.split(" ")[0:2]  # 前兩個字串 → 日期 + FDA
+        date_fmt = " ".join(date_str)
 
         results.append({
-            "date": date_fmt,
+            "date": date_fmt,   # 例如 "28-08-2025 FDA"
             "title": title,
             "url": href
         })
