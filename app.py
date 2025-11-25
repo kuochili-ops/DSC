@@ -8,8 +8,8 @@ from matcher import match_drugs
 st.set_page_config(page_title="FDA 藥品安全公告比對", layout="wide")
 st.title("FDA 藥品安全公告比對台灣藥品")
 
-# --- 日期正則 (dd-mm-yyyy 格式) ---
-DMY_REGEX = re.compile(r"\b([0-2]?\d|3[01])[-/](0?\d|1[0-2])-(19|20)\d{2}")
+# --- 日期正則 (允許日期後面有字串，例如 '08-28-2025FDA') ---
+DMY_REGEX = re.compile(r"\b([0-2]?\d|3[01])[-/](0?\d|1[0-2])-(19|20)\d{2}.*")
 
 def filter_dmy(df, date_col="date"):
     """只保留符合日-月-年格式的公告"""
