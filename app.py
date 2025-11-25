@@ -25,10 +25,13 @@ def filter_dmy(df, date_col="date"):
     return df
 
 def format_date(df, date_col="date"):
-    """將日期欄位轉成 dd-mm-yyyy 格式，有日期才轉換，沒有就保持空白"""
+    """將日期欄位轉成 dd-mm-yyyy 格式，有日期才轉換，沒有就保持空白字串"""
     if date_col in df.columns:
-        df[date_col] = pd.to_datetime(df[date_col], errors="coerce").dt.strftime("%d-%m-%Y")
+        dates = pd.to_datetime(df[date_col], errors="coerce")
+        df[date_col] = dates.dt.strftime("%d-%m-%Y")
+        df[date_col] = df[date_col].fillna("")  # 把 NaT 轉成空字串
     return df
+
 
 # --- Step 1: 抓取 FDA 公告 ---
 st.subheader("最新 FDA 藥品安全公告")
