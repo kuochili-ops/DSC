@@ -14,9 +14,10 @@ DMY_REGEX = re.compile(r"([0-2]?\d|3[01])[-/](0?\d|1[0-2])-(19|20)\d{2}")
 def filter_dmy(df, date_col="date"):
     """只保留含有日-月-年格式的公告"""
     if date_col in df.columns:
-        mask = df[date_col].astype(str).str.contains(DMY_REGEX)
+        mask = df[date_col].astype(str).str.contains(DMY_REGEX, regex=True)
         return df[mask].copy()
     return df
+
 
 # --- Step 1: 抓取 FDA 公告 ---
 st.subheader("最新 FDA 藥品安全公告")
