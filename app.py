@@ -25,7 +25,7 @@ def filter_dmy(df, date_col="date"):
     return df
 
 def format_date(df, date_col="date"):
-    """將日期欄位轉成 dd-mm-yyyy 格式"""
+    """將日期欄位轉成 dd-mm-yyyy 格式，有日期才轉換，沒有就保持空白"""
     if date_col in df.columns:
         df[date_col] = pd.to_datetime(df[date_col], errors="coerce").dt.strftime("%d-%m-%Y")
     return df
