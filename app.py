@@ -32,4 +32,5 @@ if st.button("更新公告（FDA 網頁）"):
 
 if 'fda_df' in st.session_state:
     st.subheader("FDA 藥品安全公告")
+    # ✅ 移除 url 欄位，只顯示 date, title(超連結), text(摘要)
     st.dataframe(st.session_state['fda_df'][["date", "title", "text"]], use_container_width=True)
