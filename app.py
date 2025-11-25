@@ -8,16 +8,15 @@ from matcher import match_drugs
 st.set_page_config(page_title="FDA 藥品安全公告比對", layout="wide")
 st.title("FDA 藥品安全公告比對台灣藥品")
 
-# 正則：只辨識開頭是 dd-mm-yyyy，不管後面有什麼
-DMY_REGEX = re.compile(r"^([0-2]?\d|3[01])[-/](0?\d|1[0-2])-(19|20)\d{2}")
+# --- 日期正則 (只辨識開頭是 dd-mm-yyyy，不管後面有什麼) ---
+DMY_REGEX = r"^([0-2]?\d|3[01])[-/](0?\d|1[0-2])-(19|20)\d{2}"
 
 def filter_dmy(df, date_col="date"):
     """保留開頭是日期的公告，不管後面有什麼字"""
     if date_col in df.columns:
-        mask = df[date_col].astype(str).str.contains(DMY_REGEX, regex=True)
+        mask = df[date_col].astype(str).apply(lambda x: re.match(DMY_REGEX, x) is not None)
         return df[mask].copy()
     return df
-
 
 # --- Step 1: 抓取 FDA 公告 ---
 st.subheader("最新 FDA 藥品安全公告")
