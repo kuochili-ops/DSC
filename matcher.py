@@ -1,11 +1,6 @@
 import pandas as pd
 
 def match_drugs(fda_df, tw_df):
-    """
-    比對 FDA 公告與台灣藥品資料
-    fda_df: DataFrame (FDA 公告)
-    tw_df: DataFrame 或 CSV 檔案路徑 (台灣藥品)
-    """
     # 如果 tw_df 是檔案路徑，就讀檔；如果已經是 DataFrame，就直接用
     if isinstance(tw_df, (str, bytes)):
         tw_df = pd.read_csv(tw_df)
