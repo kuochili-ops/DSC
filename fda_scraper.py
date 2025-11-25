@@ -15,6 +15,7 @@ def fetch_fda_announcements():
     soup = BeautifulSoup(res.text, "html.parser")
     results = []
 
+    # 抓取所有 <ul><li>
     for li in soup.select("ul li"):
         link = li.find("a")
         if not link:
@@ -26,7 +27,7 @@ def fetch_fda_announcements():
             href = "https://www.fda.gov" + href
 
         text = link.get_text(strip=True)
-        raw_date = li.get_text(" ", strip=True)[:10]  # 只取日期部分
+        raw_date = li.get_text(" ", strip=True)[:10]  # 嘗試抓日期
 
         results.append({
             "date": raw_date,
@@ -37,11 +38,14 @@ def fetch_fda_announcements():
 
     df = pd.DataFrame(results)
 
-    # 防呆：確保有 date 欄位才轉換
+    # 只保留有日期的項目
     if "date" in df.columns and not df.empty:
+        df = df[df["date"].str.match(r"\d{2}-\d{2}-\d{4}", na=False)].copy()
         df["date"] = pd.to_datetime(df["date"], errors="coerce").dt.strftime("%d-%m-%Y")
-        df["date"] = df["date"].where(df["date"].notna(), "")
+        df["date"] = df["date"].fillna("")
+        # 只保留最新 7 筆
+        df = df.head(7)
     else:
-        df["date"] = ""
+        df = pd.DataFrame(columns=["date", "title", "text", "url"])
 
     return df
