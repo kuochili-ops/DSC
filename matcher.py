@@ -35,8 +35,6 @@ def match_drugs(fda_df, tw_df):
             for _, tw_row in matched.iterrows():
                 results.append({
                     "date": fda_row.get("date", ""),
-                    "fda_title": fda_row["title"],
-                    "fda_url": fda_row.get("url", ""),
                     "tw_id": tw_row["tw_id"],
                     "tw_c_brand": tw_row["tw_c_brand"],
                     "tw_e_brand": tw_row["tw_e_brand"],
@@ -46,8 +44,6 @@ def match_drugs(fda_df, tw_df):
         else:
             results.append({
                 "date": fda_row.get("date", ""),
-                "fda_title": fda_row["title"],
-                "fda_url": fda_row.get("url", ""),
                 "tw_id": "",
                 "tw_c_brand": "",
                 "tw_e_brand": "",
@@ -55,4 +51,10 @@ def match_drugs(fda_df, tw_df):
                 "tw_company": ""
             })
 
-    return pd.DataFrame(results)
+    result_df = pd.DataFrame(results)
+
+    # 🔎 篩選藥商包含「中國化學」或「中化裕民」
+    mask = result_df["tw_company"].astype(str).str.contains("中國化學|中化裕民", case=False, na=False)
+    result_df = result_df[mask].copy()
+
+    return result_df
